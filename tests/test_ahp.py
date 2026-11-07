@@ -10,16 +10,16 @@ def test_equal_comparison_weights():
 
     result = calculate_ahp(matrix)
 
-    assert np.allclose(result.weights, [1/3, 1/3, 1/3])
+    assert np.allclose(result.weights, [1 / 3, 1 / 3, 1 / 3])
     assert result.consistency_ratio == 0.0
     assert result.is_consistent
 
 
 def test_known_pairwise_comparison():
     matrix = np.array([
-        [1,   3,   5],
-        [1/3, 1,   2],
-        [1/5, 1/2, 1],
+        [1, 3, 5],
+        [1 / 3, 1, 2],
+        [1 / 5, 1 / 2, 1],
     ])
 
     result = calculate_ahp(
@@ -58,9 +58,84 @@ def test_criteria_length_mismatch():
 def test_weights_are_normalized():
     matrix = np.array([
         [1, 2],
-        [1/2, 1],
+        [1 / 2, 1],
     ])
 
     result = calculate_ahp(matrix)
 
     assert np.isclose(result.weights.sum(), 1.0)
+
+
+# Additional validation tests
+
+
+def test_empty_criterion_name_rejected():
+    matrix = np.ones((2, 2))
+
+    with pytest.raises(ValueError):
+        calculate_ahp(matrix, criteria=["Geology", " "])
+
+
+def test_duplicate_criterion_names_rejected():
+    matrix = np.ones((2, 2))
+
+    with pytest.raises(ValueError):
+        calculate_ahp(matrix, criteria=["Geology", "Geology"])
+
+
+@pytest.mark.parametrize("threshold", [-0.1, 1.1, np.nan, np.inf])
+def test_invalid_threshold_rejected(threshold):
+    matrix = np.ones((3, 3))
+
+    with pytest.raises(ValueError):
+        calculate_ahp(matrix, threshold=threshold)
+
+
+def test_non_finite_matrix_rejected():
+    matrix = np.array([
+        [1, np.nan],
+        [np.nan, 1],
+    ])
+
+    with pytest.raises(ValueError):
+        validate_matrix(matrix)
+
+
+def test_non_positive_matrix_values_rejected():
+    matrix = np.array([
+        [1, 0],
+        [0, 1],
+    ])
+
+    with pytest.raises(ValueError):
+        validate_matrix(matrix)
+
+
+def test_invalid_diagonal_rejected():
+    matrix = np.array([
+        [2, 3],
+        [1 / 3, 1],
+    ])
+
+    with pytest.raises(ValueError):
+        validate_matrix(matrix)
+
+
+def test_matrix_larger_than_supported_limit_rejected():
+    matrix = np.ones((11, 11))
+
+    with pytest.raises(ValueError):
+        validate_matrix(matrix)
+
+
+def test_two_criterion_matrix_has_zero_consistency_ratio():
+    matrix = np.array([
+        [1, 3],
+        [1 / 3, 1],
+    ])
+
+    result = calculate_ahp(matrix)
+
+    assert result.consistency_index == 0.0
+    assert result.consistency_ratio == 0.0
+    assert result.is_consistent

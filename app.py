@@ -4,9 +4,14 @@
 import numpy as np
 import pandas as pd
 import streamlit as st
+import plotly.express as px
 
 from src.ahp import calculate_ahp
 
+
+# --------------------------------------------------
+# Page configuration
+# --------------------------------------------------
 
 st.set_page_config(
     page_title="Groundwater GIS Toolkit",
@@ -24,6 +29,7 @@ st.markdown(
 
 st.divider()
 
+
 # --------------------------------------------------
 # 1. Criteria configuration
 # --------------------------------------------------
@@ -39,7 +45,6 @@ default_criteria = [
 ]
 
 criteria = []
-
 cols = st.columns(5)
 
 for i, default_name in enumerate(default_criteria):
@@ -58,6 +63,7 @@ if any(not name for name in criteria):
 if len(set(criteria)) != len(criteria):
     st.error("Criterion names must be unique.")
     st.stop()
+
 
 # --------------------------------------------------
 # 2. Pairwise comparison matrix
@@ -112,8 +118,9 @@ matrix_df = pd.DataFrame(
 
 st.dataframe(
     matrix_df.style.format("{:.3f}"),
-    use_container_width=True,
+    width="stretch",
 )
+
 
 # --------------------------------------------------
 # 3. Calculate AHP
@@ -125,9 +132,8 @@ st.subheader("3. Calculate criterion weights")
 if st.button(
     "Calculate AHP Weights",
     type="primary",
-    use_container_width=True,
+    width="stretch",
 ):
-
     try:
         result = calculate_ahp(
             matrix,
@@ -138,8 +144,12 @@ if st.button(
         st.session_state["ahp_result"] = result
         st.session_state["ahp_matrix"] = matrix_df
 
-    except (ValueError, np.linalg.LinAlgError) as error:
+        # Store the criteria associated with these results.
+        st.session_state["ahp_criteria"] = criteria.copy()
+
+    except (ValueError, np.linalg.LinAlgError, ArithmeticError) as error:
         st.error(f"Calculation error: {error}")
+
 
 # --------------------------------------------------
 # 4. Display results
@@ -148,6 +158,14 @@ if st.button(
 if "ahp_result" in st.session_state:
 
     result = st.session_state["ahp_result"]
+
+    # Prevent displaying stale results after criteria changes.
+    if st.session_state.get("ahp_criteria") != criteria:
+        st.warning(
+            "The criteria have changed. Recalculate AHP weights "
+            "to display updated results."
+        )
+        st.stop()
 
     st.divider()
     st.subheader("4. AHP Results")
@@ -179,6 +197,7 @@ if "ahp_result" in st.session_state:
             "Review your pairwise judgments."
         )
 
+    # Prepare results
     results_df = pd.DataFrame({
         "Criterion": result.criteria,
         "Weight": result.weights,
@@ -190,6 +209,7 @@ if "ahp_result" in st.session_state:
         ascending=False,
     )
 
+    # Results table
     st.subheader("Criterion weights")
 
     st.dataframe(
@@ -197,27 +217,66 @@ if "ahp_result" in st.session_state:
             "Weight": "{:.4f}",
             "Weight (%)": "{:.2f}%",
         }),
-        use_container_width=True,
+        width="stretch",
     )
 
+    # Plotly weight distribution chart
     st.subheader("Weight distribution")
 
-    chart_df = results_df.set_index("Criterion")[["Weight (%)"]]
+    fig = px.bar(
+        results_df,
+        x="Weight (%)",
+        y="Criterion",
+        orientation="h",
+        text="Weight (%)",
+        title="AHP Criterion Weight Distribution",
+    )
 
-    st.bar_chart(chart_df)
+    fig.update_traces(
+        texttemplate="%{text:.2f}%",
+        textposition="outside",
+        cliponaxis=False,
+    )
+
+    fig.update_layout(
+        xaxis=dict(
+            title="Relative weight (%)",
+            range=[0, 100],
+            ticksuffix="%",
+        ),
+        yaxis=dict(
+            title="",
+            autorange="reversed",
+        ),
+        showlegend=False,
+        height=400,
+        margin=dict(
+            l=20,
+            r=60,
+            t=60,
+            b=50,
+        ),
+    )
+
+    st.plotly_chart(
+        fig,
+        width="stretch",
+    )
 
     # --------------------------------------------------
     # 5. Export
     # --------------------------------------------------
 
-    csv_data = results_df.to_csv(index=False).encode("utf-8")
+    csv_data = results_df.to_csv(
+        index=False
+    ).encode("utf-8")
 
     st.download_button(
         label="Download AHP Results (CSV)",
         data=csv_data,
         file_name="ahp_criterion_weights.csv",
         mime="text/csv",
-        use_container_width=True,
+        width="stretch",
     )
 
     st.caption(
@@ -225,6 +284,11 @@ if "ahp_result" in st.session_state:
         "importance. They do not independently establish "
         "groundwater potential or validate the input data."
     )
+
+
+# --------------------------------------------------
+# Footer
+# --------------------------------------------------
 
 st.divider()
 

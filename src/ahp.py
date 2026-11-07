@@ -59,8 +59,15 @@ def validate_matrix(matrix: np.ndarray) -> np.ndarray:
     if not np.allclose(np.diag(matrix), 1.0):
         raise ValueError("All diagonal values must equal 1.")
 
-    if not np.allclose(matrix * matrix.T, 1.0, rtol=1e-7, atol=1e-7):
-        raise ValueError("Matrix must be reciprocal: a[j,i] = 1/a[i,j].")
+    if not np.allclose(
+        matrix * matrix.T,
+        1.0,
+        rtol=1e-7,
+        atol=1e-7,
+    ):
+        raise ValueError(
+            "Matrix must be reciprocal: a[j,i] = 1/a[i,j]."
+        )
 
     return matrix
 
@@ -79,46 +86,113 @@ def calculate_ahp(
     criteria:
         Optional names of the criteria.
     threshold:
-        Maximum acceptable Consistency Ratio.
+        Maximum acceptable Consistency Ratio, between 0 and 1.
 
     Returns
     -------
     AHPResult
         Weights, lambda maximum, CI, CR and consistency status.
+
+    Notes
+    -----
+    For matrices of size 1 or 2, CI and CR are defined as zero
+    in this implementation.
     """
 
     matrix = validate_matrix(matrix)
     n = matrix.shape[0]
 
-    if not np.isfinite(threshold) or threshold < 0:
-        raise ValueError("Threshold must be a finite non-negative number.")
+    # Validate consistency threshold
+    if (
+        not np.isscalar(threshold)
+        or not np.isfinite(threshold)
+        or not 0 <= threshold <= 1
+    ):
+        raise ValueError("Threshold must be between 0 and 1.")
 
+    # Validate criterion names
     if criteria is None:
         criteria = [f"Criterion {i + 1}" for i in range(n)]
+    else:
+        if isinstance(criteria, str):
+            raise ValueError("Criteria must be a list of names.")
 
-    if len(criteria) != n:
-        raise ValueError("Number of criteria must match matrix dimensions.")
+        criteria = list(criteria)
 
-    if len(set(criteria)) != n:
-        raise ValueError("Criterion names must be unique.")
+        if len(criteria) != n:
+            raise ValueError(
+                "Number of criteria must match matrix dimensions."
+            )
+
+        if not all(
+            isinstance(name, str) and name.strip()
+            for name in criteria
+        ):
+            raise ValueError(
+                "All criterion names must be non-empty strings."
+            )
+
+        criteria = [name.strip() for name in criteria]
+
+        if len(set(criteria)) != n:
+            raise ValueError("Criterion names must be unique.")
 
     # Principal right eigenvector
     eigenvalues, eigenvectors = np.linalg.eig(matrix)
+
     principal_index = int(np.argmax(eigenvalues.real))
 
-    lambda_max = float(eigenvalues[principal_index].real)
-    weights = eigenvectors[:, principal_index].real
+    principal_eigenvalue = eigenvalues[principal_index]
+    principal_eigenvector = eigenvectors[:, principal_index]
 
-    # Ensure positive normalized weights
-    weights = np.abs(weights)
+    # Check numerical stability
+    if not np.isclose(principal_eigenvalue.imag, 0.0, atol=1e-8):
+        raise ArithmeticError(
+            "Principal eigenvalue is unexpectedly complex."
+        )
+
+    if not np.allclose(
+        principal_eigenvector.imag,
+        0.0,
+        atol=1e-8,
+    ):
+        raise ArithmeticError(
+            "Principal eigenvector is unexpectedly complex."
+        )
+
+    lambda_max = float(principal_eigenvalue.real)
+    weights = principal_eigenvector.real
+
+    # Normalize eigenvector sign
+    if weights.sum() < 0:
+        weights = -weights
+
+    # A positive reciprocal matrix should have positive
+    # principal eigenvector components.
+    if np.any(weights <= 0):
+        raise ArithmeticError(
+            "Principal eigenvector contains non-positive values."
+        )
+
+    # Normalize weights
     weights = weights / weights.sum()
 
-    # Consistency Index
+    if (
+        not np.all(np.isfinite(weights))
+        or not np.isclose(weights.sum(), 1.0)
+    ):
+        raise ArithmeticError("Invalid AHP weights calculated.")
+
+    # Consistency Index and Consistency Ratio
     if n <= 2:
         consistency_index = 0.0
         consistency_ratio = 0.0
     else:
-        consistency_index = max(0.0, (lambda_max - n) / (n - 1))
+        consistency_index = max(
+            0.0,
+            (lambda_max - n) / (n - 1),
+        )
+
         consistency_ratio = (
             consistency_index / RANDOM_INDEX[n]
         )
