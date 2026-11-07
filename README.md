@@ -195,7 +195,7 @@ python visualize_results.py
 pytest -v
 ```
 
-The current test suite contains nine tests covering AHP calculations, matrix validation, weighted overlay calculations, NoData handling and input validation.
+The current test suite contains 20 tests covering AHP calculations, matrix validation, consistency thresholds, weighted overlay calculations, NoData handling and input validation.
 
 ## Project Structure
 
