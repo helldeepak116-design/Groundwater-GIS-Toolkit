@@ -1,98 +1,58 @@
 # Groundwater GIS Toolkit
 
-A Python-based geospatial toolkit for **Groundwater Potential Zone (GWPZ) mapping** using the Analytical Hierarchy Process (AHP) and weighted overlay analysis.
+An open-source Python GIS toolkit for **Groundwater Potential Index (GWPI) calculation, Analytical Hierarchy Process (AHP), weighted overlay analysis, and groundwater potential zonation**.
 
-The project provides an end-to-end workflow for generating groundwater potential index (GWPI) rasters, classifying groundwater potential zones, visualizing spatial results, and calculating area statistics.
+The project demonstrates a reproducible geospatial workflow for identifying groundwater potential zones using thematic raster layers and multi-criteria decision analysis.
 
-> **Data disclaimer:** This repository currently uses reproducible synthetic raster datasets for demonstration and software testing. The outputs do not represent validated groundwater potential results from an actual watershed.
+## Dashboard Preview
 
-## Project Preview
+![Groundwater GIS Toolkit Dashboard](docs/images/dashboard.png)
+
+## Groundwater Potential Zonation Map
 
 ![Groundwater Potential Zonation Map](outputs/groundwater_potential_map.png)
 
-*Groundwater potential zonation generated using synthetic demonstration data.*
+## Project Overview
 
-## Key Features
+Groundwater potential zonation is an important application of Remote Sensing (RS), Geographic Information Systems (GIS), and Multi-Criteria Decision Analysis (MCDA).
 
-- AHP-based criteria weighting using the eigenvector method.
-- Consistency Index (CI) and Consistency Ratio (CR) calculation.
-- Saaty Random Index table for consistency assessment.
-- Weighted overlay analysis using multiple raster criteria.
-- Raster alignment and input validation.
-- Groundwater Potential Index (GWPI) generation.
-- Classification into five groundwater potential zones.
-- GeoTIFF export with CRS and NoData preservation.
-- Thematic map generation with legend, north arrow and scale bar.
-- Groundwater potential area statistics in hectares and percentages.
-- Interactive Streamlit dashboard.
-- Automated unit tests using pytest.
+This toolkit provides a Python-based workflow to:
 
-## Technology Stack
+- Calculate AHP weights from pairwise comparison matrices.
+- Evaluate the consistency of expert judgments.
+- Perform weighted overlay analysis on thematic raster datasets.
+- Generate a Groundwater Potential Index (GWPI).
+- Classify groundwater potential into five zones.
+- Visualize and summarize the resulting zonation.
+- Explore AHP results through an interactive Streamlit dashboard.
 
-| Technology | Purpose |
-|---|---|
-| Python 3.12 | Core programming |
-| NumPy | Numerical computation |
-| Pandas | Tabular data and statistics |
-| SciPy | Eigenvalue calculations |
-| GeoPandas | Geospatial data ecosystem |
-| Rasterio | Raster processing and GeoTIFF |
-| PyProj | Coordinate reference systems |
-| Matplotlib | Cartographic visualization |
-| Streamlit | Interactive dashboard |
-| Plotly | Interactive charts |
-| Pytest | Automated testing |
+## Live Application
 
-## Methodology
+**Try the interactive dashboard:**
 
-### 1. Input Criteria
+[Groundwater GIS Toolkit – Streamlit App](https://groundwater-gis-toolkit.streamlit.app)
 
-The demonstration workflow uses five raster criteria:
+## Features
 
-- Geology
-- Slope
-- Drainage Density
-- Lineament Density
-- Rainfall
+### 1. Analytical Hierarchy Process (AHP)
 
-Each raster contains suitability scores from 1 to 5.
+- Pairwise comparison matrix.
+- Normalized priority weights.
+- Principal eigenvalue calculation.
+- Consistency Index (CI).
+- Consistency Ratio (CR).
+- Consistency validation using the conventional CR threshold of 0.10.
 
-These scores are illustrative inputs, not empirically validated groundwater suitability ratings.
+### 2. Weighted Overlay Analysis
 
-### 2. Analytical Hierarchy Process (AHP)
+- Raster-based weighted overlay.
+- GWPI calculation.
+- Handling of raster NoData cells.
+- Geospatial metadata preservation.
 
-AHP is used to derive normalized weights from a pairwise comparison matrix.
+### 3. Groundwater Potential Zonation
 
-The implementation calculates:
-
-- Principal eigenvector and normalized weights
-- Maximum eigenvalue (\(\lambda_{\max}\))
-- Consistency Index (CI)
-- Consistency Ratio (CR)
-
-The consistency ratio is evaluated using the commonly applied threshold:
-
-\[
-CR < 0.10
-\]
-
-A lower CR indicates more consistent pairwise judgments.
-
-### 3. Weighted Overlay Analysis
-
-The Groundwater Potential Index is calculated using:
-
-\[
-GWPI = \sum_{i=1}^{n} W_i S_i
-\]
-
-Where:
-
-- \(W_i\) = normalized weight of criterion \(i\)
-- \(S_i\) = suitability score of criterion \(i\)
-- \(n\) = number of criteria
-
-The resulting GWPI raster is classified into five potential zones:
+Five groundwater potential classes:
 
 1. Very Low
 2. Low
@@ -100,102 +60,80 @@ The resulting GWPI raster is classified into five potential zones:
 4. High
 5. Very High
 
-The current demonstration uses equal-width classification intervals.
+### 4. Interactive Dashboard
 
-### 4. Spatial Analysis and Outputs
+- Enter and modify pairwise comparison values.
+- Calculate AHP weights.
+- View consistency results.
+- Visualize criterion weights.
+- Export calculated results as CSV.
 
-The toolkit validates raster alignment, including CRS, dimensions and affine transforms. It also handles NoData values using a common valid-data mask.
+### 5. Geospatial Processing
 
-Generated outputs include:
+- GeoTIFF raster input and output.
+- Coordinate Reference System preservation.
+- Raster resolution preservation.
+- Spatial analysis using Rasterio and NumPy.
 
-| Output | Description |
+## Methodology
+
+The toolkit follows a standard MCDA-based groundwater potential zonation workflow.
+
+1. Prepare thematic raster layers.
+2. Construct the AHP pairwise comparison matrix.
+3. Calculate normalized criterion weights.
+4. Evaluate the consistency ratio.
+5. Reclassify thematic layers into suitability scores.
+6. Apply weighted overlay analysis.
+7. Calculate the Groundwater Potential Index.
+8. Classify the GWPI into five potential zones.
+9. Generate maps and zonal statistics.
+
+### Groundwater Potential Index
+
+The weighted overlay model is expressed as:
+
+**GWPI = Σ (Wi × Ri)**
+
+Where:
+
+- **GWPI** = Groundwater Potential Index
+- **Wi** = Weight assigned to the ith thematic criterion
+- **Ri** = Suitability score of the ith thematic raster layer
+
+### AHP Consistency
+
+The Consistency Index is calculated as:
+
+**CI = (λmax − n) / (n − 1)**
+
+The Consistency Ratio is:
+
+**CR = CI / RI**
+
+Where:
+
+- λmax = Maximum eigenvalue
+- n = Number of criteria
+- RI = Random Index
+
+A consistency ratio below 0.10 is conventionally considered acceptable.
+
+## Technology Stack
+
+| Technology | Application |
 |---|---|
-| `groundwater_potential_index.tif` | Continuous GWPI raster |
-| `groundwater_potential_zones.tif` | Five-class potential-zone raster |
-| `groundwater_potential_map.png` | Cartographic visualization |
-| `groundwater_zone_statistics.csv` | Area statistics by potential zone |
-
-## Demonstration Results
-
-The current synthetic demonstration contains 10,000 valid raster pixels at 30 m resolution.
-
-| Potential Zone | Area (ha) | Area (%) |
-|---|---:|---:|
-| Very Low | 1.08 | 0.12 |
-| Low | 109.26 | 12.14 |
-| Moderate | 327.96 | 36.44 |
-| High | 392.94 | 43.66 |
-| Very High | 68.76 | 7.64 |
-| **Total** | **900.00** | **100.00** |
-
-**Demonstration CRS:** EPSG:32645 (WGS 84 / UTM zone 45N)
-
-These statistics describe only the synthetic test raster.
-
-## Installation
-
-### Prerequisites
-
-- Python 3.12
-- Git
-- Visual Studio Code (recommended)
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/helldeepak116-design/Groundwater-GIS-Toolkit.git
-cd Groundwater-GIS-Toolkit
-```
-
-### 2. Create a virtual environment
-
-Windows PowerShell:
-
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-### 3. Install dependencies
-
-```bash
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-## Usage
-
-### Generate demonstration raster datasets
-
-```bash
-python generate_demo.py
-```
-
-### Run the AHP dashboard
-
-```bash
-streamlit run app.py
-```
-
-### Execute weighted overlay analysis
-
-```bash
-python run_demo.py
-```
-
-### Generate the thematic map and area statistics
-
-```bash
-python visualize_results.py
-```
-
-### Run automated tests
-
-```bash
-pytest -v
-```
-
-The current test suite contains 20 tests covering AHP calculations, matrix validation, consistency thresholds, weighted overlay calculations, NoData handling and input validation.
+| Python | Core programming |
+| NumPy | Numerical computation |
+| Pandas | Data processing |
+| SciPy | Scientific computation |
+| GeoPandas | Geospatial data processing |
+| Rasterio | Raster processing |
+| PyProj | Coordinate reference systems |
+| Matplotlib | Map visualization |
+| Plotly | Interactive charts |
+| Streamlit | Web dashboard |
+| Pytest | Unit testing |
 
 ## Project Structure
 
@@ -207,8 +145,8 @@ Groundwater-GIS-Toolkit/
 ├── run_demo.py
 ├── visualize_results.py
 ├── requirements.txt
+├── pytest.ini
 ├── README.md
-├── .gitignore
 │
 ├── src/
 │   ├── __init__.py
@@ -221,11 +159,6 @@ Groundwater-GIS-Toolkit/
 │
 ├── data/
 │   └── demo/
-│       ├── geology.tif
-│       ├── slope.tif
-│       ├── drainage_density.tif
-│       ├── lineament_density.tif
-│       └── rainfall.tif
 │
 ├── outputs/
 │   ├── groundwater_potential_index.tif
@@ -234,45 +167,141 @@ Groundwater-GIS-Toolkit/
 │   └── groundwater_zone_statistics.csv
 │
 └── docs/
+    └── images/
+        └── dashboard.png
 ```
 
-## Scientific Limitations
+## Installation
 
-This repository is currently a software demonstration and not a validated hydrogeological assessment.
+### 1. Clone the repository
 
-For application to a real watershed, the following are required:
+```bash
+git clone https://github.com/helldeepak116-design/Groundwater-GIS-Toolkit.git
 
-- Actual geological and hydrogeological datasets.
-- DEM-derived slope and drainage density.
-- Verified lineament mapping.
-- Observed rainfall data.
-- Appropriate thematic suitability rankings.
-- Expert-reviewed AHP pairwise comparisons.
-- Field observations and groundwater-level validation.
+cd Groundwater-GIS-Toolkit
+```
 
-The classification thresholds and weights should be evaluated and adapted for the study area's hydrogeological conditions.
+### 2. Create a virtual environment
 
-## Future Development
+```bash
+python -m venv .venv
+```
 
-- Support for additional raster criteria.
-- User-uploaded GeoTIFF datasets.
-- Configurable classification methods.
-- Improved raster preprocessing and validation.
-- Watershed-level groundwater potential assessment.
-- Model validation using observed groundwater data.
-- Interactive GIS visualization and reporting.
+Activate it on Windows:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+### 3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+## Run the Project
+
+### Generate synthetic demo data
+
+```bash
+python generate_demo.py
+```
+
+### Perform weighted overlay analysis
+
+```bash
+python run_demo.py
+```
+
+### Generate maps and statistics
+
+```bash
+python visualize_results.py
+```
+
+### Launch the interactive dashboard
+
+```bash
+streamlit run app.py
+```
+
+## Demo Dataset and Results
+
+The repository includes a reproducible synthetic dataset generated using a fixed random seed.
+
+| Parameter | Value |
+|---|---|
+| Raster dimensions | 100 × 100 pixels |
+| Pixel resolution | 30 m |
+| Coordinate Reference System | EPSG:32645 |
+| Valid raster cells | 10,000 |
+| Total demonstration area | 900 hectares |
+| Number of potential zones | 5 |
+
+### Groundwater Potential Zone Statistics
+
+| Potential Zone | Area (ha) | Area (%) |
+|---|---:|---:|
+| Very Low | 1.08 | 0.12 |
+| Low | 109.26 | 12.14 |
+| Moderate | 327.96 | 36.44 |
+| High | 392.94 | 43.66 |
+| Very High | 68.76 | 7.64 |
+| **Total** | **900.00** | **100.00** |
+
+These statistics are generated from the synthetic demonstration dataset and are intended to demonstrate the workflow, not represent actual groundwater conditions.
+
+## Testing
+
+The project includes automated unit tests for AHP calculations and weighted overlay analysis.
+
+Run the test suite:
+
+```bash
+pytest -v
+```
+
+**Current test status:** 20 tests passing.
+
+## Applications
+
+Potential applications of this toolkit include:
+
+- Groundwater potential zonation.
+- Watershed-scale hydrogeological studies.
+- Remote Sensing and GIS research.
+- MCDA-based environmental analysis.
+- Academic research and geospatial modelling.
+- Reproducible groundwater assessment workflows.
+
+## Limitations and Disclaimer
+
+This repository uses synthetic demonstration raster data. The generated groundwater potential map and statistics are not validated groundwater observations and must not be interpreted as a real-world groundwater assessment.
+
+For practical applications, users must provide appropriate study-area-specific thematic datasets, scientifically justified suitability scores, and validated AHP judgments.
+
+The results are dependent on input data quality, criterion selection, reclassification schemes, and assigned weights.
+
+## Future Improvements
+
+- Integration with real-world satellite and geological datasets.
+- Support for additional thematic criteria.
+- Improved raster preprocessing and reclassification tools.
+- Groundwater potential validation using well inventory data.
+- Advanced geospatial visualization.
+- Expanded analytical and statistical tools.
 
 ## Author
 
 **Deepak Mohanta**
 
 M.Tech Applied Geology  
-National Institute of Technology (NIT) Raipur
+National Institute of Technology (NIT), Raipur
 
-Research Interests: Remote Sensing and GIS, Hydrogeology, Geospatial Modelling, Mineral Exploration and Applied Geology.
+**Research Interests:** Remote Sensing & GIS, Hydrogeology, Mineral Exploration, Geospatial Modelling, and Environmental Geoscience.
 
-GitHub: https://github.com/helldeepak116-design
+GitHub: [@helldeepak116-design](https://github.com/helldeepak116-design)
 
----
+## License
 
-*Developed as an open-source geospatial learning and research project.*
+This project is open-source. A license file should be added to the repository before reuse or redistribution under a specified license.
